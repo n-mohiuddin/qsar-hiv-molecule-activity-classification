@@ -169,21 +169,6 @@ ROC Curve
 
 Precision–Recall Curve
 
-(These plots are included in the repository under the figures/ directory.)
-
-Repository Structure
-QSAR-HIV/
-│
-├── data/
-├── notebooks/
-│   └── QSAR_classification.ipynb
-├── figures/
-│   ├── confusion_matrix.png
-│   ├── roc_curve.png
-│   └── pr_curve.png
-├── models/
-└── README.md
-
 Future Work
 
 Scaffold-based data splitting for improved chemical generalization
