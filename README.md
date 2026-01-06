@@ -114,6 +114,8 @@ Top-N enrichment analysis demonstrates strong prioritization of active compounds
 
 These results indicate that the model effectively concentrates true actives among the highest-ranked candidates, which is essential for practical virtual screening campaigns.
 
+![Top-N Enrichment Curve](figures/Top-N_Enrichment_Held-out_Scaffold_Test_Set.png)  
+
 ---
 
 ## Key Takeaways
