@@ -59,6 +59,10 @@ The scaffold-aware split provides a **chemically realistic estimate of generaliz
 
 The observed performance degradation from stratified to scaffold splits is expected and reflects the **removal of chemical information leakage**.
 
+![Random Forest: Stratified vs Scaffold-Aware Cross-Validation](figures/scaffold_vs_stratified.png)  
+*Stratified cross-validation yields higher ROC-AUC and PR-AUC due to scaffold overlap, while scaffold-aware evaluation enforces structural separation and provides a more realistic estimate of generalization to unseen chemical scaffolds.*
+
+
 ---
 
 ## Models Evaluated
