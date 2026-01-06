@@ -96,10 +96,10 @@ Given the screening-oriented objective, the following metrics are emphasized:
 At the default decision threshold (0.5), recall is intentionally conservative.  
 This reflects a **prioritization-focused decision strategy**, rather than aggressive binary classification.
 
-![Precision–Recall Curve (Held-Out Scaffold Test Set)](figures/pr_curve_scaffold_test.png)  
+![Precision–Recall Curve](Precision-Recall_Curve_Scaffold_Test_Set.png)  
 *PR-AUC is emphasized due to severe class imbalance (~4% actives), reflecting realistic screening performance.*
 
-![ROC Curve (Held-Out Scaffold Test Set)](figures/roc_curve_scaffold_test.png)  
+![ROC Curve](ROC_Curve_Scaffold_Test_Set.png)  
 *ROC-AUC summarizes global ranking ability, reported alongside PR-AUC for completeness.*
 
 ---
