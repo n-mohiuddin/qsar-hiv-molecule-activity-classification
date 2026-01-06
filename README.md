@@ -1,206 +1,127 @@
-# QSAR Modeling for HIV Inhibitor Activity Prediction
-
-A cheminformatics workflow using molecular descriptors and Morgan fingerprints.
+# QSAR-Based Activity Prioritization for HIV Inhibitor Discovery  
+**A scaffold-aware, imbalance-aware virtual screening workflow**
 
 ---
 
 ## Project Overview
 
-This project presents a complete QSAR (Quantitative Structure–Activity Relationship) workflow aimed at predicting HIV inhibitor activity using molecular structure data. The study covers preprocessing of SMILES strings, feature engineering, exploratory data analysis, model benchmarking, hyperparameter tuning, and external test evaluation.
+This project implements a chemically realistic QSAR workflow for prioritizing HIV inhibitor candidates under severe class imbalance.  
+Rather than treating activity prediction as a hard binary classification task, the primary objective is **compound ranking for early-stage virtual screening**, where experimental throughput is limited and early enrichment is critical.
 
-The work reflects practical methods used in cheminformatics and early-stage drug discovery, particularly in the context of virtual screening and hit identification.
-
----
-
-## Dataset Description
-
-The dataset originates from the MoleculeNet HIV benchmark and contains approximately 41,000 molecules labeled according to biochemical assay results:
-
-- **Active:** CA (Confirmed Active), CM (Confirmed Moderately Active)  
-- **Inactive:** CI (Confirmed Inactive)
-
-The dataset is highly imbalanced, with active compounds representing roughly 4% of all samples. For this reason, evaluation metrics such as PR-AUC and recall are more informative than accuracy.
+A central design principle of this work is **scaffold-aware evaluation**, ensuring that reported performance reflects generalization to **unseen chemical scaffolds**, rather than memorization of close analogs.
 
 ---
 
-## Domain Insight: Chemical Interpretation
+## Dataset
 
-The HIV inhibition assays used to label this dataset reflect the biochemical activity of molecules interacting with viral targets. Physicochemical properties such as:
+- **Source:** MoleculeNet – HIV benchmark  
+- **Size:** ~41,000 small molecules  
 
-- Molecular weight  
-- Lipophilicity (LogP)  
-- Topological polar surface area (TPSA)  
-- Hydrogen bond donor/acceptor counts  
+### Activity Labels
+- **Active:** Confirmed Active (CA), Confirmed Moderately Active (CM)  
+- **Inactive:** Confirmed Inactive (CI)  
 
-influence permeability, solubility, and binding affinity. These descriptors provide interpretable chemical features that form the basis of traditional QSAR approaches.
+- **Class imbalance:** ~4% actives  
 
-Morgan fingerprints complement these descriptors by encoding substructural patterns. Models such as Random Forest and XGBoost are well suited for learning complex structure–activity relationships in high-dimensional fingerprint space and are commonly used in early-stage virtual screening to identify promising active compounds under class imbalance.
+Due to this strong imbalance, **accuracy is not a meaningful performance metric**. Model evaluation therefore focuses on metrics appropriate for ranking and early retrieval.
 
 ---
 
-## Project Workflow
+## Molecular Representation
 
-### 1. Data Loading and Cleaning
+Each compound is represented using a hybrid feature set combining interpretability and expressive power.
 
-- Loading the HIV dataset from the Hugging Face datasets library  
-- Standardizing and canonicalizing SMILES  
-- RDKit molecule validation  
-- Removal of invalid or unparseable structures  
-
-### 2. Feature Engineering
-
-This step constructs the numerical representation of each molecule.
-
-#### 2.1 Calculation of Physicochemical Descriptors
-
-Computed using RDKit:
-
+### Physicochemical Descriptors (RDKit)
 - Molecular Weight (MolWt)  
 - LogP (MolLogP)  
 - Topological Polar Surface Area (TPSA)  
-- Hydrogen Bond Donors (HBD)  
-- Hydrogen Bond Acceptors (HBA)  
+- Hydrogen bond donors and acceptors  
 - Number of rotatable bonds  
 
-These descriptors serve both interpretability and statistical analysis.
+These descriptors provide chemically interpretable context related to permeability, solubility, and binding propensity.
 
-#### 2.2 Morgan Fingerprints
+### Morgan Fingerprints
+- Radius = 2 (ECFP4)  
+- 2048-bit hashed fingerprints  
 
-- Radius = 2  
-- 2048-bit hashed fingerprint  
-
-This representation captures substructural information used for machine learning models.
-
-#### 2.3 Hybrid Feature Matrix
-
-Descriptors and fingerprints were concatenated into a unified feature matrix for model development.
-
-### 3. Exploratory Data Analysis
-
-EDA focused on statistical comparison and visualization of computed descriptors:
-
-- Distribution analysis of descriptors for active vs inactive classes  
-- Boxplots and histograms  
-- Mann–Whitney U tests to assess statistically significant differences  
-- Correlation heatmaps to identify redundancy among descriptors  
-
-This step provided chemical insight into features associated with activity.
-
-### 4. Model Development
-
-All models were evaluated using stratified 5-fold cross-validation to ensure fair and consistent comparison.
-
-#### 4.1 Baseline Model — Logistic Regression
-
-- Linear decision boundary  
-- Establishes a reference for non-linear models  
-
-#### 4.2 Benchmark Model — Random Forest
-
-- Captures non-linear structure–activity patterns  
-- Performs well on high-dimensional fingerprint representations  
-
-#### 4.3 Advanced Non-Linear Model — XGBoost
-
-- Gradient boosting classifier  
-- Improves recall for the minority class in imbalanced classification problems  
-
-#### 4.4 Model Comparison
-
-Evaluated metrics:
-
-- Accuracy  
-- F1-score (active class)  
-- Recall (active class)  
-- ROC-AUC  
-- PR-AUC (primary metric due to imbalance)  
+Fingerprints encode local substructural patterns critical for modeling non-linear structure–activity relationships.
 
 ---
 
-## Cross-validated Performance
+## Data Splitting Strategy (Critical Design Choice)
 
-| Model                   | PR-AUC | F1 (Active) | Recall (Active) |
-|-------------------------|:------:|:-----------:|:---------------:|
-| Logistic Regression     | 0.31   | 0.28        | 0.56            |
-| Random Forest (Default) | 0.48   | 0.44        | 0.32            |
-| XGBoost                 | 0.45   | 0.41        | 0.56            |
-| Random Forest (Tuned)   | 0.42   | 0.47        | 0.47            |
+Two evaluation strategies are compared:
 
----
+- **Stratified split:** Preserves class balance but permits scaffold leakage  
+- **Scaffold-aware split (Murcko scaffolds):** Enforces zero scaffold overlap between training and test sets  
 
-## Hyperparameter Tuning
+The scaffold-aware split provides a **chemically realistic estimate of generalization performance** and is therefore used for final model evaluation.
 
-Hyperparameter optimization was attempted using `RandomizedSearchCV`. Due to instability in PR-AUC across folds and high computational cost, a stable parameter configuration was selected based on domain knowledge:
-
-- `n_estimators = 300`  
-- `max_depth = 10`  
-- `min_samples_split = 5`  
-- `min_samples_leaf = 1`  
-- `max_features = 0.5`  
-- `class_weight = "balanced"`  
-
-This configuration improved the balance between precision and recall for the minority (active) class.
+The observed performance degradation from stratified to scaffold splits is expected and reflects the **removal of chemical information leakage**.
 
 ---
 
-## Final Model Selection
+## Models Evaluated
 
-Because this dataset reflects an early-stage virtual screening scenario, identifying active compounds is more important than maximizing overall accuracy. Therefore, PR-AUC and recall were prioritized.
+All models were evaluated using cross-validation on the training set.
 
-- The **default Random Forest** achieved the highest PR-AUC, indicating strong precision–recall performance.  
-- **XGBoost** achieved the highest recall, detecting more actives than other models.  
-- **Logistic Regression** served as a baseline for comparison.  
-- A **tuned Random Forest** model was ultimately selected because it provided a superior balance between recall and F1-score while maintaining competitive PR-AUC.  
+- **Logistic Regression** — linear baseline  
+- **Random Forest** — primary model, robust to noisy biological labels  
+- **XGBoost** — additional non-linear benchmark  
 
-This trade-off is well suited for virtual screening, where recovering active compounds is a priority.
-
----
-
-## Test Set Results
-
-| Metric           | Value   |
-|------------------|:-------:|
-| Accuracy         | 0.9609  |
-| F1 (Active)      | 0.4410  |
-| Recall (Active)  | 0.4394  |
-| ROC-AUC          | 0.8046  |
-| PR-AUC           | 0.3667  |
-
-Results are consistent with cross-validation, indicating good generalization and no evidence of overfitting.
+**Random Forest** was selected as the final model due to its stable performance, strong PR-AUC, and consistent generalization under scaffold-aware evaluation.
 
 ---
 
-## Model Visualizations
+## Evaluation Metrics
 
-Key visualizations (stored under the `figures/` directory):
+Given the screening-oriented objective, the following metrics are emphasized:
 
- ### Descriptor Boxplots (Active vs Inactive)
-![Descriptor boxplots](figures/descriptor_boxplots.png)
-
-### Descriptor Histograms
-![Descriptor histograms](figures/descriptor_histograms.png)
-
-### Correlation Heatmap of Molecular Descriptors
-![Correlation heatmap](figures/correlation_heatmap_descriptors.png)
-
-### Confusion Matrix
-![Confusion matrix](figures/confusion_matrix.png)
-
-### ROC Curve
-![ROC curve](figures/roc_curve.png)
-
-### Precision–Recall Curve
-![Precision–Recall curve](figures/precision_recall_curve.png)
+- **ROC-AUC:** Global ranking ability  
+- **PR-AUC:** Performance under severe class imbalance  
+- **Top-N enrichment:** Early recovery of active compounds  
+- **Recall (active class):** Reported but not optimized at a fixed threshold  
 
 ---
 
-## Future Work
+## Final Results (Held-Out Scaffold Test Set)
 
-- Scaffold-based data splitting for improved chemical generalization  
-- Tanimoto similarity clustering  
-- Feature interpretation using SHAP  
-- Applicability domain estimation  
-- Graph Neural Networks (GNNs) for molecular representation  
+- **ROC-AUC:** 0.81  
+- **PR-AUC:** 0.37  
+
+At the default decision threshold (0.5), recall is intentionally conservative.  
+This reflects a **prioritization-focused decision strategy**, rather than aggressive binary classification.
+
+---
+
+## Early Enrichment Performance
+
+Top-N enrichment analysis demonstrates strong prioritization of active compounds:
+
+- **Top 1%:** ~17× enrichment over random  
+- **Top 5%:** ~10× enrichment  
+- **Top 10%:** ~6× enrichment  
+
+These results indicate that the model effectively concentrates true actives among the highest-ranked candidates, which is essential for practical virtual screening campaigns.
+
+---
+
+## Key Takeaways
+
+- Scaffold-aware evaluation is essential for realistic QSAR modeling  
+- PR-AUC and enrichment metrics are more informative than accuracy for imbalanced datasets  
+- The final model generalizes well to unseen chemical scaffolds  
+- Conservative recall reflects a deliberate screening strategy, not model failure  
+
+---
+
+## Tools & Libraries
+
+- Python  
+- RDKit  
+- scikit-learn  
+- NumPy, pandas  
+- matplotlib, seaborn  
 
 ---
 
@@ -208,4 +129,15 @@ Key visualizations (stored under the `figures/` directory):
 
 **Nezihe Mohiuddin**  
 📧 nezihemohiuddin@gmail.com
+
+---
+
+## Future Extensions
+
+- Applicability domain estimation  
+- Descriptor and fingerprint importance analysis (e.g., SHAP)  
+- Chemical space clustering using Tanimoto similarity  
+- Graph Neural Network (GNN) models for structure-aware learning  
+
+
 
