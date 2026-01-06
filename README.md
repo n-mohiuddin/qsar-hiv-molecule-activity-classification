@@ -62,6 +62,18 @@ The observed performance degradation from stratified to scaffold splits is expec
 ![Random Forest: Stratified vs Scaffold-Aware Cross-Validation](figures/scaffold_vs_stratified.png)  
 *Stratified cross-validation yields higher ROC-AUC and PR-AUC due to scaffold overlap, while scaffold-aware evaluation enforces structural separation and provides a more realistic estimate of generalization to unseen chemical scaffolds.*
 
+## Stratified vs Scaffold-Aware Cross-Validation Results
+
+| Model               | Split Type | ROC-AUC        | PR-AUC         |
+|---------------------|------------|----------------|----------------|
+| Logistic Regression | Stratified | 0.794 ± 0.021  | 0.314 ± 0.036  |
+| Logistic Regression | Scaffold   | 0.770 ± 0.035  | 0.266 ± 0.043  |
+| Random Forest       | Stratified | 0.844 ± 0.029  | 0.487 ± 0.031  |
+| Random Forest       | Scaffold   | 0.814 ± 0.027  | 0.429 ± 0.068  |
+| XGBoost             | Stratified | 0.819 ± 0.021  | 0.455 ± 0.039  |
+| XGBoost             | Scaffold   | 0.794 ± 0.033  | 0.392 ± 0.043  |
+
+*Scaffold-aware cross-validation consistently reduces ROC-AUC and PR-AUC across models, reflecting the removal of chemical information leakage and providing a realistic estimate of generalization to unseen chemical scaffolds.*
 
 ---
 
